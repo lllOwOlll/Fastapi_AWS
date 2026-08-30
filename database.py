@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-
+from models import Base
 
 load_dotenv()
 
@@ -34,9 +34,16 @@ SessionLocal = sessionmaker(
 )
 
 
+        
 if __name__ == "__main__":
 
     try:
+        Base.metadata.create_all(
+            bind=engine
+        )
+
+        print("테이블 생성 완료")
+
         with engine.connect() as connection:
             result = connection.execute(
                 text("SELECT 1")
@@ -52,3 +59,4 @@ if __name__ == "__main__":
             "MySQL 연결 실패:",
             e
         )
+        
