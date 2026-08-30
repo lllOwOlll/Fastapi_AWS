@@ -6,6 +6,8 @@ from fastapi import UploadFile, HTTPException
 from database import SessionLocal
 from models import Job
 
+from redis_client import redis_client
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -54,6 +56,7 @@ async def create_grayscale_job(image: UploadFile):
 
         db.add(new_job)
         db.commit()
+        redis_client.rpush("job_queue", job_id)
 
     except Exception:
         db.rollback()
