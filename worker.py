@@ -6,12 +6,15 @@ import redis
 from database import SessionLocal
 from models import Job
 from logger import logger
+import os
+
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 
 redis_client = redis.Redis(
-    host="localhost",
+    host=REDIS_HOST,
     port=6379,
-    decode_responses=True,
-    socket_timeout=None
+    decode_responses=True
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -30,12 +33,19 @@ logger.info(
 )
 
 while True:
-    print("작업 대기 중...")
+    try:
+        print("작업 대기 중...")
 
-    result = redis_client.blpop(
-        "job_queue",
-        timeout=5
-    )
+        result = redis_client.blpop(
+            "job_queue",
+            timeout=0
+        )
+
+        queue_name, job_id = result
+
+    except redis.RedisError as e:
+        logger.error(f"Redis 오류: {e}")
+        continue
 
     if result is None:
         continue
@@ -80,7 +90,9 @@ while True:
         )
 
         # 원본 이미지 읽기
-        image = cv2.imread(job.input_path)
+        input_path = BASE_DIR / job.input_path
+
+        image = cv2.imread(str(input_path))
 
         if image is None:
             raise ValueError("이미지를 읽을 수 없습니다.")
@@ -91,22 +103,17 @@ while True:
             cv2.COLOR_BGR2GRAY
         )
 
-        # 결과 파일 경로
-        result_path = RESULT_DIR / f"{job_id}.png"
-
-        # 결과 이미지 저장
-        success = cv2.imwrite(
-            str(result_path),
-            gray_image
-        )
+        relative_result_path = Path("results") / f"{job_id}.png"
+        result_path = BASE_DIR / relative_result_path
+        
+        success = cv2.imwrite(str(result_path), gray_image)
 
         if not success:
             raise ValueError("결과 이미지를 저장할 수 없습니다.")
 
         # 작업 완료
         job.status = "completed"
-        job.result_path = str(result_path)
-
+        job.result_path = relative_result_path.as_posix()
         db.commit()
 
         logger.info(

@@ -1,0 +1,13 @@
+# Environment
+.env
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Runtime files
+uploads/
+results/
+result/
+logs/

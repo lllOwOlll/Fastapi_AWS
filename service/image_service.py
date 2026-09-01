@@ -34,7 +34,8 @@ async def create_grayscale_job(image: UploadFile):
     suffix = Path(image.filename).suffix
 
     # 이미지 저장 경로
-    input_path = UPLOAD_DIR / f"{job_id}{suffix}"
+    relative_input_path = Path("uploads") / f"{job_id}{suffix}"
+    input_path = BASE_DIR / relative_input_path
 
     # 업로드 이미지 읽기
     contents = await image.read()
@@ -51,7 +52,7 @@ async def create_grayscale_job(image: UploadFile):
             job_id=job_id,
             task_type="grayscale",
             status="queued",
-            input_path=str(input_path)
+            input_path=str(relative_input_path)
         )
 
         db.add(new_job)

@@ -4,7 +4,7 @@ from fastapi import HTTPException
 
 from database import SessionLocal
 from models import Job
-
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def get_job_by_id(job_id: str):
     db = SessionLocal()
@@ -58,8 +58,8 @@ def get_job_result(job_id: str):
                 status_code=404,
                 detail="결과 파일 경로가 없습니다."
             )
-
-        result_path = Path(job.result_path)
+            
+        result_path = BASE_DIR / job.result_path
 
         if not result_path.exists():
             raise HTTPException(
